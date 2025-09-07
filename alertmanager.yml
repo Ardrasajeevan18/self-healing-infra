@@ -1,0 +1,28 @@
+# Alertmanager Configuration for Self-Healing Infrastructure
+
+global:
+  resolve_timeout: 5m  # Time to wait before considering alert resolved
+
+# Route configuration
+route:
+  receiver: 'webhook_receiver'
+  group_by: ['alertname']        # Group alerts by alertname
+  group_wait: 30s                # Wait 30s before sending first notification
+  group_interval: 5m             # Interval to group multiple alerts together
+  repeat_interval: 1h            # Repeat notification if alert persists
+
+# Receivers
+receivers:
+  - name: 'webhook_receiver'
+    webhook_configs:
+      - url: 'http://13.61.151.15:5001/'   # Your Flask webhook IP
+        send_resolved: true                 # Send resolved alerts as well
+
+# Inhibition rules (prevent duplicate notifications)
+inhibit_rules:
+  - source_match:
+      severity: 'critical'  # Critical alerts suppress warning alerts
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']  # Suppress only for same service/instance
+
